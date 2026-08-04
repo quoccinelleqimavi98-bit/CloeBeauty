@@ -46,7 +46,9 @@ export class CalendarComponent implements OnInit {
       const dateStr = this.formatDate(dateObj);
       const isPast = dateObj < new Date(this.todayWithoutTime());
       const isAvailable = this.availableDates.some((d:any) =>
-        d.date === dateStr || (d.essai && d.essai === dateStr)
+        d.date === dateStr
+        || (d.essai && d.essai === dateStr)
+        || (d.linkedDates && d.linkedDates.includes(dateStr))
       );
 
       week.push({ day, isPast, isAvailable, dateStr });

@@ -466,7 +466,8 @@ export class AppComponent {
       this.datesArray.some(
         (d: any) =>
           d.date === this.fields[4].model ||
-          (d.essai && d.essai === this.fields[4].model),
+          (d.essai && d.essai === this.fields[4].model) ||
+          (d.linkedDates && d.linkedDates.includes(this.fields[4].model)),
       )
     ) {
       if (this.trad == 'fr')
