@@ -268,6 +268,7 @@ export class AdminComponent {
     if (!this.data.settings) {
       this.data.settings = { contactEmail: '', instagramUrl: '', instagramHandle: '' };
     }
+    if (!this.data.carousel) this.data.carousel = [];
     if (!this.data.trads) return;
     for (const key of Object.keys(this.extraTextDefaults)) {
       const def = this.extraTextDefaults[key];
@@ -308,6 +309,18 @@ export class AdminComponent {
   uploadSiteImage(key: string, ev: Event) {
     if (!this.data.images) this.data.images = {};
     this.uploadInto(this.data.images, key, '', ev, 'site_' + key);
+  }
+
+  // Carrousel de badges : le src est une URL complète (souvent externe), donc
+  // après upload on stocke l'URL complète (base assets + nom de fichier).
+  uploadCarousel(item: any, ev: Event, fieldId: string) {
+    const input = ev.target as HTMLInputElement;
+    const file = input.files && input.files[0];
+    if (!file) return;
+    this.doUpload(file, '', '', fieldId).then((name) => {
+      if (name) item.src = this.assetBase + name;
+      input.value = '';
+    });
   }
 
   tradKeys(): string[] {

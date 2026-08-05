@@ -347,6 +347,45 @@
           </div>
         </div>
         <button class="ccb-btn small" (click)="addItem(data.lists, '')">+ Ajouter une photo</button>
+
+        <h3>Carrousel (badges / récompenses)</h3>
+        <p class="ccb-hint">
+          Chaque élément : une image (URL externe possible, ou téléversée) et un
+          lien cliquable. Vous pouvez ajouter, modifier, supprimer et déplacer.
+        </p>
+        <div class="ccb-card" *ngFor="let item of data.carousel; let i = index">
+          <div class="ccb-imgfield">
+            <img class="ccb-preview" [src]="item.src" />
+            <div class="ccb-imgfield-ctrl">
+              <input type="text" [(ngModel)]="item.src" placeholder="URL de l'image" />
+              <label class="ccb-upload">
+                Changer
+                <input type="file" accept="image/*" hidden
+                  (change)="uploadCarousel(item, $event, 'car' + i)" />
+              </label>
+              <span class="ccb-up" *ngIf="uploadingKey === 'car' + i">…</span>
+            </div>
+          </div>
+          <div class="ccb-row">
+            <label>Lien</label>
+            <input type="text" [(ngModel)]="item.link" placeholder="https://..." />
+          </div>
+          <div class="ccb-row">
+            <label>Texte alt</label>
+            <input type="text" [(ngModel)]="item.alt" />
+          </div>
+          <div class="ccb-card-actions">
+            <button class="ccb-mini" (click)="moveUp(data.carousel, i)">↑</button>
+            <button class="ccb-mini" (click)="moveDown(data.carousel, i)">↓</button>
+            <button class="ccb-mini del" (click)="removeItem(data.carousel, i)">Supprimer</button>
+          </div>
+        </div>
+        <button
+          class="ccb-btn small"
+          (click)="addItem(data.carousel, { src: '', alt: '', link: '' })"
+        >
+          + Ajouter un badge
+        </button>
       </div>
 
       <!-- ============== FORMULAIRE ============== -->

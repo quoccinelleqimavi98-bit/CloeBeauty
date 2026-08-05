@@ -803,13 +803,17 @@
         />
       </div>
 
-      <div class="prixmariagenet onlyOpacity" appScrollAppear>
+      <div
+        class="prixmariagenet onlyOpacity"
+        appScrollAppear
+        *ngIf="carousel.length"
+      >
         <div class="carousel-track">
           <ng-container *ngFor="let repeat of [1, 2, 3]">
             <div
               class="carousel-item"
-              *ngFor="let item of carouselItems"
-              (click)="openSite(item.linkIndex)"
+              *ngFor="let item of carousel"
+              (click)="item.link && openLink(item.link)"
             >
               <img [src]="item.src" [alt]="item.alt" />
             </div>

@@ -90,41 +90,45 @@ export class AppComponent {
     this.timeonapage = Date.now();
   }
 
-  carouselItems = [
+  // Carrousel de badges du footer, éditable via le mode admin (chargé depuis la BDD).
+  carousel: any[] = [];
+
+  // Valeurs par défaut (utilisées tant que rien n'est enregistré en BDD).
+  defaultCarousel = [
     {
       src: 'https://cloechaudronbeauty.com/backend/assets/vu01.png',
       alt: 'Badge 1',
-      linkIndex: 0,
+      link: 'https://www.leblogdemadamec.fr/blog-mariage-lifestyle/mariage-couture-a-labbaye-saint-eusebe/',
     },
     {
       src: 'https://cloechaudronbeauty.com/backend/assets/vu02.png',
       alt: 'Badge 2',
-      linkIndex: 1,
+      link: 'https://www.instagram.com/p/CqBidpiMqcn/',
     },
     {
       src: 'https://cloechaudronbeauty.com/backend/assets/vu03.png',
       alt: 'Badge 3',
-      linkIndex: 2,
+      link: 'https://caratsandcake.com/wedding/selina-and-nick',
     },
     {
       src: 'https://wedvibes.media/wp-content/uploads/2025/01/WEDVIBES.MEDIA-community-badge-2025-6.png',
       alt: 'Badge 4',
-      linkIndex: 3,
+      link: 'https://wedvibes.media/real-weddings/a-sunlit-wedding-among-the-vineyards-of-southern-france/',
     },
     {
       src: 'https://cloechaudronbeauty.com/backend/assets/vu04.png',
       alt: 'Badge 5',
-      linkIndex: 4,
+      link: 'https://www.lasoeurdelamariee.com/mariage-dolce-vita-declaration-damour-a-la-mediterranee/',
     },
     {
       src: 'https://cdn1.mariages.net/img/badges/2026/badge-weddingawards_fr_FR.jpg',
       alt: 'Wedding Awards',
-      linkIndex: 5,
+      link: 'https://www.mariages.net/esthetique-coiffure-mariage/cloe-chaudron--e211061',
     },
     {
       src: 'https://cloechaudronbeauty.com/backend/assets/vu10.jpg',
       alt: 'Albe EDITIONS',
-      linkIndex: 6,
+      link: 'https://albe-editions.com/inspiration-aesthetic-of-love-un-mariage-au-chateau-de-taulignan/',
     },
   ];
 
@@ -243,42 +247,6 @@ export class AppComponent {
   openInsta() {
     const url = (this.settings && this.settings.instagramUrl) || '';
     if (url) window.open(url, '_blank');
-  }
-
-  openSite(nb: any) {
-    if (nb == 0) {
-      window.open(
-        'https://www.leblogdemadamec.fr/blog-mariage-lifestyle/mariage-couture-a-labbaye-saint-eusebe/',
-        '_blank',
-      );
-    } else if (nb == 1) {
-      window.open('https://www.instagram.com/p/CqBidpiMqcn/', '_blank');
-    } else if (nb == 2) {
-      window.open(
-        'https://caratsandcake.com/wedding/selina-and-nick',
-        '_blank',
-      );
-    } else if (nb == 3) {
-      window.open(
-        'https://wedvibes.media/real-weddings/a-sunlit-wedding-among-the-vineyards-of-southern-france/?fbclid=PAb21jcAOJMItleHRuA2FlbQIxMQBzcnRjBmFwcF9pZA81NjcwNjczNDMzNTI0MjcAAafUsmFS7fWuwyRuGeHrDveP6ClbCvHO97mMNJjJMLGZBPQLj1yRf89hTWrZyg_aem_o9cFXs_rI720gnRPla_vGw&brid=ILWH8RwN-MYwkr0Z5WgiOg',
-        '_blank',
-      );
-    } else if (nb == 4) {
-      window.open(
-        'https://www.lasoeurdelamariee.com/mariage-dolce-vita-declaration-damour-a-la-mediterranee/',
-        '_blank',
-      );
-    } else if (nb == 5) {
-      window.open(
-        'https://www.mariages.net/esthetique-coiffure-mariage/cloe-chaudron--e211061',
-        '_blank',
-      );
-    } else if (nb == 6) {
-      window.open(
-        'https://albe-editions.com/inspiration-aesthetic-of-love-un-mariage-au-chateau-de-taulignan/',
-        '_blank',
-      );
-    }
   }
 
   clickMenu(menu: any, scroll: any = 0) {
@@ -431,6 +399,10 @@ export class AppComponent {
         this.topportfolio = res.topportfolio;
         this.images = res.images || {};
         this.settings = { ...this.settings, ...(res.settings || {}) };
+        this.carousel =
+          res.carousel && res.carousel.length
+            ? res.carousel
+            : this.defaultCarousel.map((x) => ({ ...x }));
 
         // Regroupe les références pour le mode admin (édition en direct + sauvegarde).
         this.adminData = {
@@ -450,6 +422,7 @@ export class AppComponent {
           topportfolio: this.topportfolio,
           images: this.images,
           settings: this.settings,
+          carousel: this.carousel,
         };
 
         this.page = this.topmenu[0];
