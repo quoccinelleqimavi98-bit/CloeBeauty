@@ -7,7 +7,7 @@ utile à toute personne qui reprend le projet).
 
 Le **site vitrine principal** de Cloé Chaudron Beauty :
 **https://www.cloechaudronbeauty.com** (domaine dans `CNAME.txt`).
-Application **Angular 19**, bilingue FR/EN, avec un **mode admin** qui permet de
+Application **Angular 19**, bilingüe FR/EN, avec un **mode admin** qui permet de
 modifier tout le contenu (textes + images) depuis le site lui-même
 (voir `ADMIN.md`).
 
@@ -32,6 +32,27 @@ npm install        # une fois
 npm start          # http://localhost:4200
 npm run build      # build de production dans dist/cloe-chaudron-beauty
 ```
+
+## 🤖 Règle : aller jusqu'à la mise en ligne, sans demander
+
+Quand la propriétaire (Cloé) demande une modification, elle veut le résultat
+**en ligne**, tout de suite. Elle ne crée pas et ne fusionne pas de Pull Request
+elle-même. Donc, pour toute demande de sa part :
+
+1. Fais la modification et commit.
+2. **Fais-la arriver sur `main`** — c'est `main` qui déclenche la mise en ligne
+   automatique. Deux façons acceptables (`main` n'est pas protégée) :
+   - pousser directement sur `main` ; **ou**
+   - si l'environnement impose une branche de travail, ouvrir la Pull Request
+     **puis la fusionner toi-même** dans `main` dans la foulée (aucune revue
+     n'est requise).
+3. **Ne t'arrête pas pour demander « veux-tu que je crée / fusionne la PR ?».**
+   Va jusqu'au bout : la modif doit se retrouver sur `main` sans action de Cloé.
+4. À la fin, dis-lui simplement que c'est en ligne (ou le sera dans ~2 min).
+
+> Seule exception : une modification du **backend PHP** (`backend/`) ne se
+> déploie pas toute seule (envoi FTP manuel, cf. plus bas). Dans ce cas, écris le
+> code mais **préviens** au lieu de publier.
 
 ## 🚀 Mettre en ligne (déploiement)
 
