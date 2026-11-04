@@ -745,16 +745,21 @@ textarea::placeholder {
 }
 
 .topportfolio {
+  /* Format unique des photos du carrousel Portfolio (largeur / hauteur).
+     3 / 4 = vertical 3:4. Pour changer de format, modifier seulement cette ligne. */
+  --carousel-ratio: 3 / 4;
   margin: 10vh 0vw 3vh 0vw;
   .imgcontainer {
     display: flex;
     overflow-x: scroll;
     scrollbar-width: thin;
     img {
-      width: 210px;
-      height: 280px;
-      max-width: 18vw;
-      max-height: 24vw;
+      /* Toutes les photos : même cadre ; celles d'un autre format sont
+         recadrées au centre (jamais étirées). L'image d'origine n'est pas modifiée. */
+      flex: 0 0 auto; // empêche le carrousel de comprimer certaines photos
+      width: min(210px, 18vw);
+      height: auto;
+      aspect-ratio: var(--carousel-ratio);
       object-fit: cover;
       object-position: 50% 50%;
       margin: 1vh 1vw;
@@ -807,7 +812,7 @@ textarea::placeholder {
   width: 51vw;
   min-width: 51vw;
   max-width: 51vw;
-  height: 68vw;
+  height: auto;
   max-height: unset;
 }
 
