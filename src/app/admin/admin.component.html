@@ -122,22 +122,38 @@
       <!-- ============== GALERIE / PORTFOLIO ============== -->
       <div *ngIf="activeTab === 'gallery'">
         <p class="ccb-hint">
-          Photos du portfolio. Cliquez sur "Changer" pour téléverser une nouvelle image.
+          Photos du portfolio. <strong>Pour changer l'ordre : faites glisser une photo</strong>
+          et lâchez-la à l'endroit voulu (au doigt : appui court puis glisser).
+          Le nouvel ordre est enregistré automatiquement.
+          Cliquez sur "Changer" pour téléverser une nouvelle image.
+        </p>
+        <p class="ccb-order-status" *ngIf="orderStatus">
+          <span [class.ok]="orderStatus === 'ok'" [class.error]="orderStatus === 'error'">
+            {{ orderStatus === 'saving' ? 'Enregistrement du nouvel ordre…'
+              : orderStatus === 'ok' ? '✔ Nouvel ordre enregistré'
+              : '✖ Ordre non enregistré — cliquez sur 💾 Enregistrer' }}
+          </span>
         </p>
 
         <h3>Portfolio principal ({{ data.portfolio.length }})</h3>
-        <div class="ccb-grid">
-          <div class="ccb-thumb" *ngFor="let img of data.portfolio; let i = index">
-            <img [src]="asset('portfolio/' + img)" />
+        <div class="ccb-grid ccb-sortable"
+          cdkDropList
+          cdkDropListOrientation="mixed"
+          [cdkDropListData]="data.portfolio"
+          (cdkDropListDropped)="dropPhoto($event)">
+          <div class="ccb-thumb" *ngFor="let img of data.portfolio; let i = index"
+            cdkDrag
+            [cdkDragStartDelay]="{ touch: 180, mouse: 0 }">
+            <div class="ccb-thumb-placeholder" *cdkDragPlaceholder></div>
+            <span class="ccb-pos">{{ i + 1 }}</span>
+            <img [src]="asset('portfolio/' + img)" draggable="false" />
             <div class="ccb-thumb-actions">
               <label class="ccb-upload">
                 Changer
                 <input type="file" accept="image/*" hidden
                   (change)="uploadInto(data.portfolio, i, 'portfolio', $event, 'pf' + i)" />
               </label>
-              <button class="ccb-mini" (click)="moveUp(data.portfolio, i)">↑</button>
-              <button class="ccb-mini" (click)="moveDown(data.portfolio, i)">↓</button>
-              <button class="ccb-mini del" (click)="removeItem(data.portfolio, i)">✕</button>
+              <button class="ccb-mini del" title="Supprimer la photo" (click)="removeItem(data.portfolio, i)">✕</button>
             </div>
             <span class="ccb-up" *ngIf="uploadingKey === 'pf' + i">…</span>
           </div>
@@ -145,18 +161,24 @@
         <button class="ccb-btn small" (click)="addItem(data.portfolio, '')">+ Ajouter une photo</button>
 
         <h3>Portfolio en haut ({{ data.topportfolio.length }})</h3>
-        <div class="ccb-grid">
-          <div class="ccb-thumb" *ngFor="let img of data.topportfolio; let i = index">
-            <img [src]="asset('topportfolio/' + img)" />
+        <div class="ccb-grid ccb-sortable"
+          cdkDropList
+          cdkDropListOrientation="mixed"
+          [cdkDropListData]="data.topportfolio"
+          (cdkDropListDropped)="dropPhoto($event)">
+          <div class="ccb-thumb" *ngFor="let img of data.topportfolio; let i = index"
+            cdkDrag
+            [cdkDragStartDelay]="{ touch: 180, mouse: 0 }">
+            <div class="ccb-thumb-placeholder" *cdkDragPlaceholder></div>
+            <span class="ccb-pos">{{ i + 1 }}</span>
+            <img [src]="asset('topportfolio/' + img)" draggable="false" />
             <div class="ccb-thumb-actions">
               <label class="ccb-upload">
                 Changer
                 <input type="file" accept="image/*" hidden
                   (change)="uploadInto(data.topportfolio, i, 'topportfolio', $event, 'tpf' + i)" />
               </label>
-              <button class="ccb-mini" (click)="moveUp(data.topportfolio, i)">↑</button>
-              <button class="ccb-mini" (click)="moveDown(data.topportfolio, i)">↓</button>
-              <button class="ccb-mini del" (click)="removeItem(data.topportfolio, i)">✕</button>
+              <button class="ccb-mini del" title="Supprimer la photo" (click)="removeItem(data.topportfolio, i)">✕</button>
             </div>
             <span class="ccb-up" *ngIf="uploadingKey === 'tpf' + i">…</span>
           </div>

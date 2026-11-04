@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, HostListener, Input } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 
 /**
  * ====================================================================
@@ -33,7 +34,7 @@ interface PartnerType {
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, DragDropModule],
   templateUrl: './admin.component.html',
   styleUrl: './admin.component.scss',
 })
@@ -366,6 +367,38 @@ export class AdminComponent {
     }
   }
 
+  // ----------------------------------------------------------------
+  //  Galerie : réorganisation par glisser-déposer (souris + tactile)
+  // ----------------------------------------------------------------
+  /** État de l'enregistrement automatique de l'ordre des photos. */
+  orderStatus: '' | 'saving' | 'ok' | 'error' = '';
+  private orderSaveTimer: any = null;
+
+  /** Une photo a été lâchée : on déplace l'élément dans le tableau puis on enregistre. */
+  dropPhoto(event: CdkDragDrop<any[]>) {
+    if (event.previousIndex === event.currentIndex) return;
+    // Modification en place : la galerie publique utilise le même tableau.
+    moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    this.scheduleOrderSave();
+  }
+
+  /** Enregistre l'ordre peu après le dernier déplacement (évite les envois en rafale). */
+  private scheduleOrderSave() {
+    this.orderStatus = 'saving';
+    clearTimeout(this.orderSaveTimer);
+    this.orderSaveTimer = setTimeout(() => {
+      if (this.saving) {
+        // Un enregistrement est déjà en cours : on réessaie juste après.
+        this.scheduleOrderSave();
+        return;
+      }
+      this.save((ok) => {
+        this.orderStatus = ok ? 'ok' : 'error';
+        if (ok) setTimeout(() => (this.orderStatus === 'ok' ? (this.orderStatus = '') : null), 3000);
+      });
+    }, 600);
+  }
+
   // ----- Services (tableaux parallèles fr / en) -----
   addService(group: string) {
     const s = this.data.services[group];
@@ -538,7 +571,7 @@ export class AdminComponent {
   // ----------------------------------------------------------------
   //  Sauvegarde
   // ----------------------------------------------------------------
-  save() {
+  save(done?: (ok: boolean) => void) {
     if (this.saving) return;
     // On ne persiste pas ce que l'internaute aurait tapé dans le formulaire.
     if (this.data && this.data.fields) {
@@ -552,12 +585,14 @@ export class AdminComponent {
         this.saving = false;
         this.saveStatus = 'ok';
         setTimeout(() => (this.saveStatus = ''), 4000);
+        if (done) done(true);
       },
       error: (err) => {
         this.saving = false;
         this.saveStatus = 'error';
         if (err && err.status === 403) this.handleForbidden();
         console.error(err);
+        if (done) done(false);
       },
     });
   }
