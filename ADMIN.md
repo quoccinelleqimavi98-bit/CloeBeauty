@@ -34,7 +34,7 @@ Le panneau est organisé en onglets :
 |---|---|
 | **Menu** | Libellés FR/EN, visibilité et ordre des pages |
 | **Accueil** | Phrase d'accroche, paragraphes, cartes « Découvrez » (texte + image + page) |
-| **Galerie** | Photos du portfolio (haut + principal) : ajout, suppression, remplacement. **Ordre par glisser-déposer** (souris, ou au doigt : appui court puis glisser) — enregistré automatiquement |
+| **Galerie** | Photos du portfolio (haut + principal) : ajout (une ou plusieurs photos d’un coup, placées **au début**), suppression, remplacement. **Ordre par glisser-déposer** (souris, ou au doigt : appui court puis glisser) — enregistré automatiquement |
 | **Avis** | Témoignages (nom, texte FR, texte EN, photo) |
 | **Prestations** | Forfaits Mariées/Invitées : **icône**, titres, description, « inclus », intro et note |
 | **FAQ** | Thèmes et questions/réponses FR/EN |

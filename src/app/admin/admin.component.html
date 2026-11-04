@@ -125,13 +125,15 @@
           Photos du portfolio. <strong>Pour changer l'ordre : faites glisser une photo</strong>
           et lâchez-la à l'endroit voulu (au doigt : appui court puis glisser).
           Le nouvel ordre est enregistré automatiquement.
-          Cliquez sur "Changer" pour téléverser une nouvelle image.
+          Les nouvelles photos (une ou plusieurs à la fois) se placent au début de la galerie,
+          sans changer l'ordre des autres.
+          Cliquez sur "Changer" pour remplacer une image.
         </p>
         <p class="ccb-order-status" *ngIf="orderStatus">
           <span [class.ok]="orderStatus === 'ok'" [class.error]="orderStatus === 'error'">
-            {{ orderStatus === 'saving' ? 'Enregistrement du nouvel ordre…'
-              : orderStatus === 'ok' ? '✔ Nouvel ordre enregistré'
-              : '✖ Ordre non enregistré — cliquez sur 💾 Enregistrer' }}
+            {{ orderStatus === 'saving' ? 'Enregistrement de la galerie…'
+              : orderStatus === 'ok' ? '✔ Galerie enregistrée'
+              : '✖ Galerie non enregistrée — cliquez sur 💾 Enregistrer' }}
           </span>
         </p>
 
@@ -158,7 +160,11 @@
             <span class="ccb-up" *ngIf="uploadingKey === 'pf' + i">…</span>
           </div>
         </div>
-        <button class="ccb-btn small" (click)="addItem(data.portfolio, '')">+ Ajouter une photo</button>
+        <label class="ccb-btn small ccb-add-photos" [class.disabled]="addingTo">
+          {{ addingTo === 'portfolio' ? 'Envoi ' + addingDone + '/' + addingTotal + '…' : '+ Ajouter des photos (au début)' }}
+          <input type="file" accept="image/*" multiple hidden [disabled]="!!addingTo"
+            (change)="addPhotosAtStart(data.portfolio, 'portfolio', $event)" />
+        </label>
 
         <h3>Portfolio en haut ({{ data.topportfolio.length }})</h3>
         <div class="ccb-grid ccb-sortable"
@@ -183,7 +189,11 @@
             <span class="ccb-up" *ngIf="uploadingKey === 'tpf' + i">…</span>
           </div>
         </div>
-        <button class="ccb-btn small" (click)="addItem(data.topportfolio, '')">+ Ajouter une photo</button>
+        <label class="ccb-btn small ccb-add-photos" [class.disabled]="addingTo">
+          {{ addingTo === 'topportfolio' ? 'Envoi ' + addingDone + '/' + addingTotal + '…' : '+ Ajouter des photos (au début)' }}
+          <input type="file" accept="image/*" multiple hidden [disabled]="!!addingTo"
+            (change)="addPhotosAtStart(data.topportfolio, 'topportfolio', $event)" />
+        </label>
       </div>
 
       <!-- ============== AVIS ============== -->

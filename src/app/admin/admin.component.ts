@@ -382,6 +382,41 @@ export class AdminComponent {
     this.scheduleOrderSave();
   }
 
+  /** Galerie en cours d'ajout de photos ('portfolio' / 'topportfolio'), et progression. */
+  addingTo: string | null = null;
+  addingDone = 0;
+  addingTotal = 0;
+
+  /**
+   * Ajoute une ou plusieurs photos AU DÉBUT de la galerie, dans l'ordre de
+   * sélection. Les photos existantes gardent exactement leur ordre (elles sont
+   * seulement décalées). Envoi une par une pour respecter l'ordre.
+   */
+  async addPhotosAtStart(arr: any[], folder: string, ev: Event) {
+    const input = ev.target as HTMLInputElement;
+    const files = input.files ? Array.from(input.files) : [];
+    input.value = '';
+    if (!arr || !files.length || this.addingTo) return;
+    this.addingTo = folder;
+    this.addingDone = 0;
+    this.addingTotal = files.length;
+    const names: string[] = [];
+    try {
+      for (const file of files) {
+        const name = await this.doUpload(file, folder, '', 'add_' + folder);
+        if (name) names.push(name);
+        this.addingDone++;
+      }
+    } finally {
+      this.addingTo = null;
+    }
+    if (!names.length) return;
+    // Insertion en tête, en un seul bloc : l'ordre des photos existantes ne
+    // bouge pas. Même tableau que la galerie publique → mise à jour immédiate.
+    arr.unshift(...names);
+    this.scheduleOrderSave();
+  }
+
   /** Enregistre l'ordre peu après le dernier déplacement (évite les envois en rafale). */
   private scheduleOrderSave() {
     this.orderStatus = 'saving';

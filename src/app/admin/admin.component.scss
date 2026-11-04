@@ -488,3 +488,13 @@ video.ccb-preview {
     color: #c0392b;
   }
 }
+
+.ccb-add-photos {
+  display: inline-block;
+  cursor: pointer;
+
+  &.disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
+}
