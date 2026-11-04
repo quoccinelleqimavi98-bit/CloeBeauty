@@ -23,6 +23,15 @@ const ASSET_BASE = 'https://cloechaudronbeauty.com/backend/assets/';
 // /backend/ sont servis par le même domaine).
 const API_BASE = '/backend/api/';
 
+/** Largeur du panneau d'édition (en px) : défaut, « large », limites. */
+const PANEL_DEFAULT = 460;
+const PANEL_WIDE = 820;
+const PANEL_WIDE_FROM = 640; // au-delà, le bouton propose « Rétrécir »
+const PANEL_MIN = 320;
+const PANEL_MAX_RATIO = 0.75; // le site reste visible sur au moins 25 % de l'écran
+const PANEL_NARROW_SCREEN = 700; // en dessous (téléphone) : pleine largeur, pas de réglage
+const PANEL_WIDTH_KEY = 'ccb_admin_panel_width';
+
 /** Extensions de photos acceptées par le serveur (upload_asset.php). */
 const PHOTO_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'heic', 'heif'];
 
@@ -183,6 +192,76 @@ export class AdminComponent {
   cacheBust: { [path: string]: number } = {};
 
   constructor(private http: HttpClient) {}
+
+  // ----------------------------------------------------------------
+  //  Largeur du panneau (réglable, mémorisée dans le navigateur)
+  // ----------------------------------------------------------------
+  /** Largeur actuelle du panneau, en pixels (ordinateur / tablette). */
+  panelWidth = this.loadPanelWidth();
+  /** Petit écran (téléphone) : le panneau garde toute la largeur. */
+  narrowScreen = this.isNarrow();
+  resizing = false;
+
+  private isNarrow(): boolean {
+    return typeof window === 'undefined' || window.innerWidth < PANEL_NARROW_SCREEN;
+  }
+
+  /** Limites : jamais moins de 320 px, jamais plus de 75 % de l'écran. */
+  private clampWidth(w: number): number {
+    const vw = typeof window === 'undefined' ? 1200 : window.innerWidth;
+    const max = Math.max(PANEL_MIN, Math.round(vw * PANEL_MAX_RATIO));
+    return Math.round(Math.min(Math.max(w, PANEL_MIN), max));
+  }
+
+  private loadPanelWidth(): number {
+    let w = PANEL_DEFAULT;
+    try {
+      const saved = parseInt(localStorage.getItem(PANEL_WIDTH_KEY) || '', 10);
+      if (saved > 0) w = saved;
+    } catch {}
+    return this.clampWidth(w);
+  }
+
+  private savePanelWidth() {
+    try {
+      localStorage.setItem(PANEL_WIDTH_KEY, String(this.panelWidth));
+    } catch {}
+  }
+
+  startResize(ev: PointerEvent) {
+    ev.preventDefault();
+    this.resizing = true;
+    (ev.target as HTMLElement).setPointerCapture?.(ev.pointerId);
+  }
+
+  onResize(ev: PointerEvent) {
+    if (!this.resizing) return;
+    // Panneau collé à droite : sa largeur = distance entre le doigt/la souris et le bord droit.
+    this.panelWidth = this.clampWidth(window.innerWidth - ev.clientX);
+  }
+
+  endResize(ev: PointerEvent) {
+    if (!this.resizing) return;
+    this.resizing = false;
+    (ev.target as HTMLElement).releasePointerCapture?.(ev.pointerId);
+    this.savePanelWidth();
+  }
+
+  isWide(): boolean {
+    return this.panelWidth >= PANEL_WIDE_FROM;
+  }
+
+  /** Bouton « Élargir / Rétrécir » : bascule en un clic entre étroit et large. */
+  toggleWidth() {
+    this.panelWidth = this.clampWidth(this.isWide() ? PANEL_DEFAULT : PANEL_WIDE);
+    this.savePanelWidth();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    this.narrowScreen = this.isNarrow();
+    this.panelWidth = this.clampWidth(this.panelWidth);
+  }
 
   ngOnInit(): void {
     // Reprise de session : le mot de passe (déjà validé) est conservé le temps

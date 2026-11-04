@@ -25,11 +25,25 @@
   </div>
 
   <!-- ---------- Panneau d'édition ---------- -->
-  <div class="ccb-panel" *ngIf="authed && data">
+  <div class="ccb-panel" *ngIf="authed && data"
+    [class.resizing]="resizing"
+    [style.width.px]="narrowScreen ? null : panelWidth">
+    <!-- Poignée pour élargir / rétrécir le panneau (souris ou doigt) -->
+    <div class="ccb-resize" *ngIf="!narrowScreen"
+      title="Glisser pour élargir ou rétrécir le panneau"
+      (pointerdown)="startResize($event)"
+      (pointermove)="onResize($event)"
+      (pointerup)="endResize($event)"
+      (pointercancel)="endResize($event)"
+      (dblclick)="toggleWidth()"></div>
     <!-- En-tête -->
     <div class="ccb-header">
       <div class="ccb-header-top">
         <span class="ccb-title">✦ Édition du site</span>
+        <button class="ccb-width-btn" *ngIf="!narrowScreen" (click)="toggleWidth()"
+          [title]="isWide() ? 'Rétrécir le panneau pour mieux voir le site' : 'Élargir le panneau pour avoir plus de place'">
+          {{ isWide() ? '⇥ Rétrécir' : '⇤ Élargir' }}
+        </button>
         <div class="ccb-lang">
           <button [class.active]="lang === 'fr'" (click)="lang = 'fr'">FR</button>
           <button [class.active]="lang === 'en'" (click)="lang = 'en'">EN</button>

@@ -47,6 +47,11 @@ Le panneau est organisé en onglets :
 
 Le sélecteur **FR / EN** en haut du panneau bascule la langue en cours d'édition.
 
+**Largeur du panneau** (ordinateur / tablette) : attrapez la poignée violette sur
+son bord gauche et faites-la glisser pour l'élargir ou la rétrécir, ou cliquez
+sur **⇤ Élargir / ⇥ Rétrécir** en haut. La largeur choisie est mémorisée
+(entre 320 px et 75 % de l'écran). Sur téléphone, le panneau reste plein écran.
+
 ### Images
 Chaque image a un bouton **« Changer »** : choisissez un fichier sur votre
 ordinateur, il est téléversé sur le serveur et l'image est remplacée
