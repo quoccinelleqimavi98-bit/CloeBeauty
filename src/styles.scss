@@ -505,7 +505,7 @@ html {
 }
 .footer {
   background-color: var(--principale);
-  padding: 3vh 0vw;
+  padding: 2vh 0vw 1.5vh;
 }
 
 .footer .logo {
@@ -520,7 +520,7 @@ html {
   padding: 0% 20%;
 }
 .footer .insta {
-  margin-top: 5vh;
+  margin-top: 3vh;
 }
 button {
   border: 1px solid black;
@@ -539,14 +539,26 @@ button:hover {
 .footer .desc {
   margin: 2vh 0vw;
 }
+/* Copyright · Mentions légales : une seule ligne centrée (passe sur deux
+   lignes centrées si l'écran est trop étroit). */
 .footer .copyright {
   font-size: 10px;
-  text-align: right;
-  padding: 0vh 2vw;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2px 8px;
+  text-align: center;
+  padding: 0.5vh 4vw 0;
+  p {
+    margin: 0;
+  }
+  .sep {
+    opacity: 0.6;
+  }
   .legalbot {
     transition: 0.5s;
     width: fit-content;
-    margin-left: auto;
   }
   .legalbot:hover {
     cursor: pointer;
@@ -974,7 +986,7 @@ textarea::placeholder {
   display: flex;
   justify-content: space-around;
   width: 100%;
-  bottom: -60px;
+  bottom: 0;
   div {
     transition: 0.5s;
   }
@@ -985,12 +997,9 @@ textarea::placeholder {
 }
 .portrait .footer .copyright {
   font-size: 10px;
-  text-align: right;
-  padding: 0vh 2vw;
-  position: relative;
-  top: -135px;
+  padding: 1vh 4vw 0;
   p {
-    line-height: 0.6vh;
+    line-height: 1.4;
   }
 }
 .portrait {
