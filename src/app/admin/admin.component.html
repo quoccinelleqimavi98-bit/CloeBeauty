@@ -125,8 +125,8 @@
           Photos du portfolio. <strong>Pour changer l'ordre : faites glisser une photo</strong>
           et lâchez-la à l'endroit voulu (au doigt : appui court puis glisser).
           Le nouvel ordre est enregistré automatiquement.
-          Les nouvelles photos (une ou plusieurs à la fois) se placent au début de la galerie,
-          sans changer l'ordre des autres.
+          Les nouvelles photos (une ou plusieurs à la fois, ou glissées depuis l'ordinateur)
+          se placent au début de la galerie, sans changer l'ordre des autres.
           Cliquez sur "Changer" pour remplacer une image.
         </p>
         <p class="ccb-order-status" *ngIf="orderStatus">
@@ -160,11 +160,7 @@
             <span class="ccb-up" *ngIf="uploadingKey === 'pf' + i">…</span>
           </div>
         </div>
-        <label class="ccb-btn small ccb-add-photos" [class.disabled]="addingTo">
-          {{ addingTo === 'portfolio' ? 'Envoi ' + addingDone + '/' + addingTotal + '…' : '+ Ajouter des photos (au début)' }}
-          <input type="file" accept="image/*" multiple hidden [disabled]="!!addingTo"
-            (change)="addPhotosAtStart(data.portfolio, 'portfolio', $event)" />
-        </label>
+        <ng-container *ngTemplateOutlet="addPhotos; context: { arr: data.portfolio, folder: 'portfolio' }"></ng-container>
 
         <h3>Portfolio en haut ({{ data.topportfolio.length }})</h3>
         <div class="ccb-grid ccb-sortable"
@@ -189,11 +185,7 @@
             <span class="ccb-up" *ngIf="uploadingKey === 'tpf' + i">…</span>
           </div>
         </div>
-        <label class="ccb-btn small ccb-add-photos" [class.disabled]="addingTo">
-          {{ addingTo === 'topportfolio' ? 'Envoi ' + addingDone + '/' + addingTotal + '…' : '+ Ajouter des photos (au début)' }}
-          <input type="file" accept="image/*" multiple hidden [disabled]="!!addingTo"
-            (change)="addPhotosAtStart(data.topportfolio, 'topportfolio', $event)" />
-        </label>
+        <ng-container *ngTemplateOutlet="addPhotos; context: { arr: data.topportfolio, folder: 'topportfolio' }"></ng-container>
       </div>
 
       <!-- ============== AVIS ============== -->
@@ -594,6 +586,67 @@
           (change)="uploadInto(obj, key, '', $event, id)" />
       </label>
       <span class="ccb-up" *ngIf="uploadingKey === id">…</span>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Zone d'ajout de photos (plusieurs à la fois) — utilisée par les 2 galeries -->
+<ng-template #addPhotos let-arr="arr" let-folder="folder">
+  <div class="ccb-addzone"
+    [class.over]="dragOverFolder === folder"
+    (dragover)="onFilesDragOver(folder, $event)"
+    (dragleave)="onFilesDragLeave(folder, $event)"
+    (drop)="onFilesDrop(folder, $event)">
+    <label class="ccb-addzone-pick" [class.disabled]="sendingFolder">
+      <input type="file" accept="image/*,.heic,.heif" multiple hidden
+        [disabled]="!!sendingFolder" (change)="pickPhotos(folder, $event)" />
+      <span class="ccb-addzone-title">+ Ajouter des photos</span>
+      <span class="ccb-addzone-help">
+        Cliquez pour en choisir une ou plusieurs (Ctrl/Cmd ou Maj pour en sélectionner plusieurs),
+        ou faites-les glisser ici depuis l'ordinateur. Elles seront placées au début de la galerie.
+      </span>
+    </label>
+
+    <p class="ccb-addzone-summary" *ngIf="sendSummary[folder]">{{ sendSummary[folder] }}</p>
+
+    <div class="ccb-pending" *ngIf="pending[folder].length">
+      <p class="ccb-pending-title" *ngIf="sendingFolder !== folder && countPending(folder, 'wait')">
+        {{ countPending(folder, 'wait') }} photo(s) prête(s) à envoyer.
+        Retirez avec ✕ celles que vous ne voulez pas.
+      </p>
+      <div class="ccb-pending-grid">
+        <div class="ccb-pending-item" *ngFor="let p of pending[folder]"
+          [class.is-error]="p.status === 'error'"
+          [class.is-sending]="p.status === 'sending'"
+          [class.is-ok]="p.status === 'ok'">
+          <img *ngIf="!p.noPreview" [src]="p.url" alt="" (error)="p.noPreview = true" />
+          <div class="ccb-pending-noprev" *ngIf="p.noPreview">{{ p.file.name }}</div>
+          <span class="ccb-pending-state" *ngIf="p.status === 'sending'">Envoi…</span>
+          <span class="ccb-pending-state ok" *ngIf="p.status === 'ok'">✔</span>
+          <button class="ccb-mini del ccb-pending-del" title="Retirer cette photo"
+            *ngIf="!sendingFolder" (click)="removePending(folder, p)">✕</button>
+          <p class="ccb-pending-err" *ngIf="p.status === 'error'">
+            <strong>{{ p.file.name }}</strong> : {{ p.error }}
+          </p>
+        </div>
+      </div>
+
+      <div class="ccb-progress" *ngIf="sendingFolder === folder">
+        <div class="ccb-progress-bar"><span [style.width.%]="sendTotal ? (100 * sendDone) / sendTotal : 0"></span></div>
+        <p>{{ sendDone }} sur {{ sendTotal }} photos envoyées…</p>
+      </div>
+
+      <div class="ccb-pending-actions" *ngIf="sendingFolder !== folder">
+        <button class="ccb-btn small" *ngIf="countPending(folder, 'wait')" [disabled]="!!sendingFolder"
+          (click)="sendPending(arr, folder)">
+          Envoyer {{ countPending(folder, 'wait') }} photo(s)
+        </button>
+        <button class="ccb-btn small ghost" *ngIf="canRetry(folder)" [disabled]="!!sendingFolder"
+          (click)="retryFailed(folder)">Réessayer les photos en erreur</button>
+        <button class="ccb-btn small ghost" [disabled]="!!sendingFolder" (click)="clearPending(folder)">
+          {{ countPending(folder, 'wait') ? 'Annuler' : 'Fermer' }}
+        </button>
+      </div>
     </div>
   </div>
 </ng-template>

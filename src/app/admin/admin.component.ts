@@ -23,6 +23,20 @@ const ASSET_BASE = 'https://cloechaudronbeauty.com/backend/assets/';
 // /backend/ sont servis par le même domaine).
 const API_BASE = '/backend/api/';
 
+/** Extensions de photos acceptées par le serveur (upload_asset.php). */
+const PHOTO_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'heic', 'heif'];
+
+/** Photo choisie pour la galerie, en attente d'envoi. */
+interface PendingPhoto {
+  id: number;
+  file: File;
+  url: string; // aperçu local (blob:)
+  status: 'wait' | 'sending' | 'ok' | 'error';
+  error?: string;
+  retry?: boolean; // l'erreur peut-elle se régler en réessayant ?
+  noPreview?: boolean; // aperçu impossible (ex. HEIC sur ordinateur)
+}
+
 interface PartnerType {
   key: string; // clé dans data (domains, weddings...)
   folder: string; // dossier des images
@@ -382,39 +396,169 @@ export class AdminComponent {
     this.scheduleOrderSave();
   }
 
-  /** Galerie en cours d'ajout de photos ('portfolio' / 'topportfolio'), et progression. */
-  addingTo: string | null = null;
-  addingDone = 0;
-  addingTotal = 0;
+  // ----- Ajout de plusieurs photos (sélection multiple ou glisser depuis l'ordinateur) -----
+  /** Photos choisies, en attente d'envoi, par galerie ('portfolio' / 'topportfolio'). */
+  pending: { [folder: string]: PendingPhoto[] } = { portfolio: [], topportfolio: [] };
+  /** Galerie en cours d'envoi (un seul envoi à la fois). */
+  sendingFolder: string | null = null;
+  sendDone = 0;
+  sendTotal = 0;
+  /** Bilan du dernier envoi, par galerie. */
+  sendSummary: { [folder: string]: string } = {};
+  /** Galerie survolée par des fichiers glissés depuis l'ordinateur. */
+  dragOverFolder: string | null = null;
+  private pendingSeq = 0;
 
-  /**
-   * Ajoute une ou plusieurs photos AU DÉBUT de la galerie, dans l'ordre de
-   * sélection. Les photos existantes gardent exactement leur ordre (elles sont
-   * seulement décalées). Envoi une par une pour respecter l'ordre.
-   */
-  async addPhotosAtStart(arr: any[], folder: string, ev: Event) {
+  pickPhotos(folder: string, ev: Event) {
     const input = ev.target as HTMLInputElement;
     const files = input.files ? Array.from(input.files) : [];
     input.value = '';
-    if (!arr || !files.length || this.addingTo) return;
-    this.addingTo = folder;
-    this.addingDone = 0;
-    this.addingTotal = files.length;
+    this.queueFiles(folder, files);
+  }
+
+  private hasFiles(ev: DragEvent): boolean {
+    const types = ev.dataTransfer ? Array.from(ev.dataTransfer.types || []) : [];
+    return types.indexOf('Files') >= 0;
+  }
+
+  onFilesDragOver(folder: string, ev: DragEvent) {
+    if (!this.hasFiles(ev) || this.sendingFolder) return;
+    ev.preventDefault();
+    if (ev.dataTransfer) ev.dataTransfer.dropEffect = 'copy';
+    this.dragOverFolder = folder;
+  }
+
+  onFilesDragLeave(folder: string, ev: DragEvent) {
+    const zone = ev.currentTarget as HTMLElement;
+    const to = ev.relatedTarget as Node | null;
+    if (to && zone && zone.contains(to)) return; // on reste dans la zone
+    if (this.dragOverFolder === folder) this.dragOverFolder = null;
+  }
+
+  onFilesDrop(folder: string, ev: DragEvent) {
+    ev.preventDefault();
+    this.dragOverFolder = null;
+    if (this.sendingFolder) return;
+    const files = ev.dataTransfer ? Array.from(ev.dataTransfer.files || []) : [];
+    this.queueFiles(folder, files);
+  }
+
+  /**
+   * Fichier lâché à côté de la zone d'ajout : on empêche le navigateur
+   * d'ouvrir la photo à la place du site (ce qui fermerait l'admin).
+   */
+  @HostListener('window:dragover', ['$event'])
+  @HostListener('window:drop', ['$event'])
+  preventFileOpen(ev: DragEvent) {
+    if (this.open && this.authed && this.hasFiles(ev)) ev.preventDefault();
+  }
+
+  private queueFiles(folder: string, files: File[]) {
+    if (!files.length || this.sendingFolder) return;
+    const list = this.pending[folder] || (this.pending[folder] = []);
+    this.sendSummary[folder] = '';
+    for (const file of files) {
+      const ext = (file.name.split('.').pop() || '').toLowerCase();
+      const isImage = file.type.startsWith('image/') || PHOTO_EXT.indexOf(ext) >= 0;
+      const item: PendingPhoto = {
+        id: ++this.pendingSeq,
+        file,
+        url: isImage ? URL.createObjectURL(file) : '',
+        status: 'wait',
+        noPreview: !isImage,
+      };
+      if (!isImage) {
+        item.status = 'error';
+        item.error = "Format non accepté : ce fichier n'est pas une photo (JPG, PNG, WEBP, HEIC…).";
+      }
+      list.push(item);
+    }
+  }
+
+  removePending(folder: string, item: PendingPhoto) {
+    const list = this.pending[folder];
+    const i = list.indexOf(item);
+    if (i >= 0) list.splice(i, 1);
+    if (item.url) URL.revokeObjectURL(item.url);
+    if (!list.length) this.sendSummary[folder] = '';
+  }
+
+  clearPending(folder: string) {
+    for (const p of this.pending[folder] || []) if (p.url) URL.revokeObjectURL(p.url);
+    this.pending[folder] = [];
+    this.sendSummary[folder] = '';
+  }
+
+  countPending(folder: string, status: PendingPhoto['status']): number {
+    return (this.pending[folder] || []).filter((p) => p.status === status).length;
+  }
+
+  canRetry(folder: string): boolean {
+    return (this.pending[folder] || []).some((p) => p.status === 'error' && p.retry);
+  }
+
+  retryFailed(folder: string) {
+    for (const p of this.pending[folder] || []) {
+      if (p.status === 'error' && p.retry) {
+        p.status = 'wait';
+        p.error = '';
+      }
+    }
+    this.sendSummary[folder] = '';
+  }
+
+  /**
+   * Envoie les photos en attente une par une (dans l'ordre affiché), puis les
+   * place TOUTES AU DÉBUT de la galerie, dans ce même ordre. Les photos déjà
+   * présentes gardent exactement leur ordre (elles sont seulement décalées).
+   * Une photo en erreur n'empêche pas l'envoi des suivantes.
+   */
+  async sendPending(arr: any[], folder: string) {
+    const list = this.pending[folder] || [];
+    const toSend = list.filter((p) => p.status === 'wait');
+    if (!arr || !toSend.length || this.sendingFolder) return;
+    this.sendingFolder = folder;
+    this.sendDone = 0;
+    this.sendTotal = toSend.length;
+    this.sendSummary[folder] = '';
     const names: string[] = [];
+    let forbidden = false;
     try {
-      for (const file of files) {
-        const name = await this.doUpload(file, folder, '', 'add_' + folder);
-        if (name) names.push(name);
-        this.addingDone++;
+      for (const item of toSend) {
+        item.status = 'sending';
+        const res = await this.uploadQuiet(item.file, folder);
+        if (res.name) {
+          item.status = 'ok';
+          names.push(res.name);
+        } else {
+          item.status = 'error';
+          item.error = res.error;
+          item.retry = !!res.retry; // utile seulement pour un souci de connexion / serveur
+          if (res.forbidden) {
+            forbidden = true;
+            break;
+          }
+        }
+        this.sendDone++;
       }
     } finally {
-      this.addingTo = null;
+      this.sendingFolder = null;
     }
-    if (!names.length) return;
-    // Insertion en tête, en un seul bloc : l'ordre des photos existantes ne
-    // bouge pas. Même tableau que la galerie publique → mise à jour immédiate.
-    arr.unshift(...names);
-    this.scheduleOrderSave();
+    // Les photos envoyées quittent la liste d'attente (elles sont dans la galerie).
+    for (const p of list.filter((x) => x.status === 'ok')) this.removePending(folder, p);
+    for (const p of list) if (p.status === 'sending') p.status = 'wait';
+    const failed = this.countPending(folder, 'error');
+    const ok = names.length;
+    const parts: string[] = [];
+    if (ok) parts.push(`✔ ${ok} photo${ok > 1 ? 's' : ''} ajoutée${ok > 1 ? 's' : ''} au début de la galerie`);
+    if (failed) parts.push(`✖ ${failed} photo${failed > 1 ? 's' : ''} non envoyée${failed > 1 ? 's' : ''} (voir ci-dessous)`);
+    this.sendSummary[folder] = parts.join(' · ');
+    if (ok) {
+      // Insertion en tête, en un seul bloc. Même tableau que la galerie publique.
+      arr.unshift(...names);
+      if (!forbidden) this.scheduleOrderSave();
+    }
+    if (forbidden) this.handleForbidden();
   }
 
   /** Enregistre l'ordre peu après le dernier déplacement (évite les envois en rafale). */
@@ -559,6 +703,50 @@ export class AdminComponent {
       };
       img.src = url;
     });
+  }
+
+  /** Envoie une photo sans fenêtre d'alerte ; renvoie le nom du fichier ou un message clair. */
+  private uploadQuiet(
+    file: File,
+    folder: string,
+  ): Promise<{ name?: string; error?: string; forbidden?: boolean; retry?: boolean }> {
+    const friendly = (msg: string): string => {
+      if (/type|format/i.test(msg)) {
+        return 'Format non accepté par le serveur (formats acceptés : JPG, PNG, WEBP, GIF, AVIF, HEIC).';
+      }
+      if (/volumineux|size/i.test(msg)) return 'Photo trop lourde pour le serveur.';
+      return 'Refusée par le serveur : ' + msg;
+    };
+    return this.prepareUpload(file).then(
+      (prepared) =>
+        new Promise((resolve) => {
+          const form = new FormData();
+          form.append('file', prepared, prepared.name);
+          form.append('folder', folder);
+          form.append('password', this.adminPassword);
+          this.http.post<any>(this.apiBase + 'upload_asset.php', form).subscribe({
+            next: (res) => {
+              if (res && res.status === 'ok' && res.filename) resolve({ name: res.filename });
+              else resolve({ error: friendly((res && res.message) || 'erreur inconnue') });
+            },
+            error: (err) => {
+              const status = err ? err.status : 0;
+              const msg = err && err.error && err.error.message;
+              if (status === 403) {
+                resolve({ forbidden: true, error: 'Session expirée : reconnectez-vous puis réessayez.' });
+              } else if (status === 413) {
+                resolve({ error: 'Photo trop lourde pour le serveur, même après compression.' });
+              } else if (msg) {
+                resolve({ error: friendly(msg) });
+              } else if (!status) {
+                resolve({ error: 'Connexion perdue pendant l’envoi. Vérifiez internet puis réessayez.', retry: true });
+              } else {
+                resolve({ error: `Erreur du serveur (code ${status}). Réessayez.`, retry: true });
+              }
+            },
+          });
+        }),
+    );
   }
 
   private doUpload(
