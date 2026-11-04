@@ -172,7 +172,7 @@ html {
 .portrait-menu p {
   transition: 0.5s;
   font-family: "menus" !important;
-  text-shadow: var(--gris-shadow) 1px 1px 3px;
+  text-shadow: none;
 }
 .topmenu .clicked,
 .portrait-menu .clicked {
@@ -709,6 +709,17 @@ textarea::placeholder {
   }
 }
 
+/* Drapeau de langue (mobile : .drapeau, ordinateur : image dans .topmenu) :
+   pas d'ombre, y compris au survol / au clic. */
+.drapeau,
+.drapeau:hover,
+.drapeau:active,
+.topmenu img,
+.topmenu img:hover,
+.topmenu img:active {
+  filter: none !important;
+  box-shadow: none !important;
+}
 .drapeau {
   height: 3vh;
   position: absolute;
